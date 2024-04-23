@@ -42,6 +42,7 @@ while True:
     print("1. Property Details")
     print("2. Add Property")
     print("3. Update Property")
+    print("4. Logout")
     option = input("\nEnter your choice: ")
     if option == '1':
         cursor.execute("SELECT * FROM properties WHERE customer_id = %s",(user_id))
@@ -60,7 +61,7 @@ while True:
         property_id = cursor.fetchone()
         print(property_id)
         cursor.execute("SELECT * FROM properties WHERE property_id = %s",(property_id))
-        properties = cursor.fetchall()
+        properties = cursor.fetchall()  
         for  i in properties:
             print(f"Name: {i[1]}")
             print(f"Address: {i[2]}, {i[3]}, {i[4]}\n")
@@ -78,5 +79,8 @@ while True:
         property_id = cursor.execute("UPDATE properties SET name = %s, street = %s, district = %s, state = %s WHERE id = %s returning property_id",(name,street,district,state,property_id))
         conn.commit()
         print("Property updated successfully")
+    elif option == '4':
+        print("Logged out successfully")
+        break
     else:
         print("Invalid option")
