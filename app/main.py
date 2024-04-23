@@ -1,3 +1,4 @@
+from ast import While
 from sys import deactivate_stack_trampoline
 import time
 from fastapi import FastAPI, HTTPException
@@ -18,25 +19,64 @@ while True:
         print("Unable to connect to DB")
         time.sleep(2)
 
-class User_login(BaseModel):
-    username : str
-    password : str
+user_id = None
 
-@app.post("/",status_code=status.HTTP_201_CREATED)
-def login(user : User_login):
-    cursor.execute("SELECT id FROM customers WHERE username = %s AND password = %s",(user.username,user.password))
+def login(username:str,password:str):
+    cursor.execute("SELECT id FROM customers WHERE username = %s AND password = %s",(username,password))
     user_id = cursor.fetchone()
     if not user_id:
-        raise HTTPException(
-            status_code= status.HTTP_404_NOT_FOUND,
-            detail="Wrong username and password"
-        )
-    print("User Validated")
-    return user_id
-
-@app.get("/customers")
-async def root():
-    cursor.execute("SELECT name FROM customers")
-    customers = cursor.fetchall()
-    print(customers)
-    return customers
+        print("Wrong username or password")
+    else:
+        print("Login Successful")
+        return user_id
+    
+while True:
+    print("\nPlease Login")
+    username = input("Enter username: ")
+    password = input("Enter password: ")
+    user_id = login(username=username,password=password)
+    if user_id:
+        break
+while True:
+    print("\nWelcome to the system, How can I help you?")
+    print("1. Property Details")
+    print("2. Add Property")
+    print("3. Update Property")
+    option = input("\nEnter your choice: ")
+    if option == '1':
+        cursor.execute("SELECT * FROM properties WHERE customer_id = %s",(user_id))
+        print("\n")
+        properties = cursor.fetchall()
+        for  i in properties:
+            print(f"Name: {i[1]}")
+            print(f"Address: {i[2]}, {i[3]}, {i[4]}\n")
+    elif option == '2':
+        name = input("Enter property name: ")
+        print("Enter property Address")
+        street = input("Street: ")
+        district = input("District: ")
+        state = input("State: ")
+        cursor.execute("INSERT INTO properties (property_name,street,district,state,customer_id) VALUES (%s,%s,%s,%s,%s) RETURNING property_id",(name,street,district,state,user_id))
+        property_id = cursor.fetchone()
+        print(property_id)
+        cursor.execute("SELECT * FROM properties WHERE property_id = %s",(property_id))
+        properties = cursor.fetchall()
+        for  i in properties:
+            print(f"Name: {i[1]}")
+            print(f"Address: {i[2]}, {i[3]}, {i[4]}\n")
+        conn.commit()
+        print("Property added successfully")
+    elif option == '3':
+        cursor.execute("SELECT * FROM properties WHERE customer_id = %s",(user_id))
+        properties = cursor.fetchall()
+        print(properties)
+        property_id = input("Enter property id to update: ")
+        name = input("Enter property name: ")
+        street = input("Street: ")
+        district = input("District: ")
+        state = input("State: ")
+        property_id = cursor.execute("UPDATE properties SET name = %s, street = %s, district = %s, state = %s WHERE id = %s returning property_id",(name,street,district,state,property_id))
+        conn.commit()
+        print("Property updated successfully")
+    else:
+        print("Invalid option")
